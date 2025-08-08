@@ -49,11 +49,11 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PAT_TOKEN }}   # 用 PAT 而不是 GITHUB_TOKEN
 
       - name: Set lowercase repository owner
         id: lowercase
-        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        run: echo "owner=$(echo 'colaxr' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
@@ -109,11 +109,11 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PAT_TOKEN }}  # 同样用 PAT
 
       - name: Set lowercase repository owner
         id: lowercase
-        run: echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        run: echo "owner=$(echo 'colaxr' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
@@ -145,7 +145,7 @@ jobs:
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@main
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           repository: ${{ github.repository }}
           retain_days: 0
           keep_minimum_runs: 2
@@ -159,6 +159,6 @@ jobs:
       - name: Refresh VERSION.txt cache
         run: |
           echo "Refreshing VERSION.txt cache..."
-          curl -s https://purge.jsdelivr.net/gh/LunaTechLab/moontv/VERSION.txt
+          curl -s https://purge.jsdelivr.net/gh/colaxr/MoonTV/VERSION.txt
           echo ""
           echo "VERSION.txt cache refreshed successfully"
