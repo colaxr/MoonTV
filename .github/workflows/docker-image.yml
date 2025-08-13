@@ -14,7 +14,6 @@ on:
     workflows: ['Release']
     types:
       - completed
-
   workflow_dispatch:
 
 concurrency:
@@ -63,16 +62,19 @@ jobs:
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
-
         with:
           images: ghcr.io/${{ steps.lowercase.outputs.owner }}/moontv
           tags: |
             type=ref,event=pr
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Get latest tag
+      - name: Get latest tag (with default fallback)
         run: |
-          echo "latest_tag=$(curl -s https://api.github.com/repos/${{ github.repository }}/tags | jq -r '.[0].name // "latest"' | sed 's/^v//')" >> $GITHUB_ENV
+          tag=$(curl -s https://api.github.com/repos/${{ github.repository }}/tags | jq -r '.[0].name' | sed 's/^v//')
+          if [ -z "$tag" ] || [ "$tag" == "null" ]; then
+            tag="latest"
+          fi
+          echo "latest_tag=$tag" >> $GITHUB_ENV
 
       - name: Build and push by digest
         id: build
@@ -82,7 +84,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ github.event_name == 'pull_request_target' && format('ghcr.io/{0}/moontv:pr-{1}', steps.lowercase.outputs.owner, github.event.number) || format('ghcr.io/{0}/moontv:{1}', steps.lowercase.outputs.owner, env.latest_tag) }}
+          tags: ${{ github.event_name == 'pull_request_target' && format('ghcr.io/{0}/moontv:pr-{1}', steps.lowercase.outputs.owner, github.event.number) || format('ghcr.io/{0}/moontv:{1}', steps.lowercase.outputs.owner, env.latest_tag || 'latest') }}
           outputs: type=image,name=ghcr.io/${{ steps.lowercase.outputs.owner }}/moontv,name-canonical=true,push=true
 
       - name: Export digest
@@ -153,7 +155,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.PAT_TOKEN }}  # 同样用 PAT
+          password: ${{ secrets.PAT_TOKEN }}
 
       - name: Set lowercase repository owner
         id: lowercase
@@ -175,7 +177,7 @@ jobs:
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ghcr.io/${{ steps.lowercase.outputs.owner }}/moontv:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ghcr.io/${{ steps.lowercase.outputs.owner }}/moontv:${{ steps.meta.outputs.version || 'latest' }}
 
   pr-comment:
     runs-on: ubuntu-latest
